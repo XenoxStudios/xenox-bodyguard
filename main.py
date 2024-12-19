@@ -1,66 +1,54 @@
-import nextcord
-from nextcord.ext import commands
+import discord
+from discord.ext import commands
+from discord import Member
+from discord.ext.commands import has_permissions, MissingPermissions
+import requests
+import json
+import os
 
-intents = nextcord.Intents.default()
-intents = nextcord.Intents().all()
+client = commands.Bot(command_prefix = '?')
 
-bot = commands.Bot(command_prefix="!", intents=intents)
-
-@bot.event
+@client.event
 async def on_ready():
-    print(f"{bot.user.name} is ready!")
-
-logging = True
-logschannel = INPUT_LOG_CHANNEL_ID
-
-@bot.slash_command()
-async def test(interaction: nextcord.Interaction, user: nextcord.Member):
-    await interaction.response.send_message(f"{user.mention}")
-
-@bot.slash_command()
-async def kick(interaction: nextcord.Interaction, user: nextcord.Member, reason: str):
-    if not interaction.user.guild_permissions.administrator:  # Corrected this line
-        await interaction.response.send_message("You are not authorised to run this command.", ephemeral=True)
-    else:
-        await interaction.response.send_message(f"Kicked {user.mention}", ephemeral=True)  # Corrected this line
-        if logging is True:
-            log_channel = bot.get_channel(logschannel)
-            await log_channel.send(f"{user.mention} Was kicked by {interaction.user.mention} for {reason}")
-        await user.kick(reason=reason)
-
-@bot.slash_command()
-async def ban(interaction: nextcord.Interaction, user: nextcord.Member, reason: str):
-    if not interaction.user.guild_permissions.administrator:  # Corrected this line
-        await interaction.response.send_message("You are not authorised to run this command.", ephemeral=True)
-    else:
-        await interaction.response.send_message(f"Banned {user.mention}", ephemeral=True)  # Corrected this line
-        if logging is True:
-            log_channel = bot.get_channel(logschannel)
-            await log_channel.send(f"{user.mention} Was banned by {interaction.user.mention} for **{reason}**")
-        await user.ban(reason=reason)
-
-@bot.slash_command()
-async def unban(interaction: nextcord.Interaction, user_id: str, reason: str):
-    if not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message("You are not authorized to run this command.", ephemeral=True)
-        return
-
-    try:
-        # Check if the provided user_id is a valid integer
-        if not user_id.isdigit():
-            await interaction.response.send_message("Please provide a valid user ID.", ephemeral=True)
-            return
-
-        user = await bot.fetch_user(int(user_id))
-        await interaction.guild.unban(user, reason=reason)
-        await interaction.response.send_message(f"Unbanned {user.mention}", ephemeral=True)
-        
-        if logging:
-            log_channel = bot.get_channel(logschannel)
-            await log_channel.send(f"{user.mention} was unbanned by {interaction.user.mention} for **{reason}**")
-    except Exception as e:
-        await interaction.response.send_message(f"An error occurred: {e}", ephemeral=True)
+    print("The Bot is now ready for use!")
+    print("-----------------------------")
 
 
 
-bot.run("INPUT_BOT_TOKEN")
+@client.command()
+async def test(ctx):
+    await ctx.send("TEST")
+    
+client.run('KEY')
+
+@client.event
+async def on_message(message):
+
+    if message.content == "Retard, Skibidi, Rizz, Gyatt, Rizzler, Paki, Nigga, Nigger, Twink, Chink, Tranny, Faggot":
+        await message.delete()
+        await message.channel.send("Message deleted as it contained one or more blacklisted words.")
+
+@client.command()
+@has_permissions(kick_members=True)
+async def kick(ctx, member: discord.member, *, reason=None):
+    await member.kick(reason=reason)
+    await ctx.sned(f'User {member} has been kicked')
+
+@kick.error
+async def kick_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("You don't have permission to kick members.")
+
+
+
+@client.command()
+@has_permissions(ban_members=True)
+async def ban(ctx, member: discord.member, *, reason=None):
+    await member.ban(reason=reason)
+    await ctx.sned(f'User {member} has been banned.')
+    
+@ban.error
+async def ban_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("You don't have permission to ban members.")
+  
